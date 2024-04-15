@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
  */
 package fr.xpdustry.distributor.core;
 
-import arc.ApplicationListener;
 import arc.Core;
 import arc.util.CommandHandler;
 import arc.util.Log;
@@ -26,7 +25,7 @@ import fr.xpdustry.distributor.api.Distributor;
 import fr.xpdustry.distributor.api.DistributorProvider;
 import fr.xpdustry.distributor.api.command.ArcCommandManager;
 import fr.xpdustry.distributor.api.command.sender.CommandSender;
-import fr.xpdustry.distributor.api.event.MoreEvents;
+import fr.xpdustry.distributor.api.event.EventBus;
 import fr.xpdustry.distributor.api.localization.LocalizationSource;
 import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry;
 import fr.xpdustry.distributor.api.localization.MultiLocalizationSource;
@@ -34,7 +33,6 @@ import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin;
 import fr.xpdustry.distributor.api.scheduler.PluginScheduler;
 import fr.xpdustry.distributor.api.security.PlayerValidator;
 import fr.xpdustry.distributor.api.security.permission.PermissionService;
-import fr.xpdustry.distributor.api.util.MUUID;
 import fr.xpdustry.distributor.core.commands.GroupPermissibleCommands;
 import fr.xpdustry.distributor.core.commands.PlayerPermissibleCommands;
 import fr.xpdustry.distributor.core.commands.PlayerValidatorCommands;
@@ -42,9 +40,11 @@ import fr.xpdustry.distributor.core.database.ConnectionFactory;
 import fr.xpdustry.distributor.core.database.MySQLConnectionFactory;
 import fr.xpdustry.distributor.core.database.SQLiteConnectionFactory;
 import fr.xpdustry.distributor.core.dependency.DependencyManager;
+import fr.xpdustry.distributor.core.event.SimpleEventBus;
 import fr.xpdustry.distributor.core.logging.ArcLoggerFactory;
 import fr.xpdustry.distributor.core.scheduler.SimplePluginScheduler;
 import fr.xpdustry.distributor.core.scheduler.TimeSource;
+import fr.xpdustry.distributor.core.security.PlayerValidatorListener;
 import fr.xpdustry.distributor.core.security.SQLPlayerValidator;
 import fr.xpdustry.distributor.core.security.permission.SQLPermissionService;
 import java.io.BufferedReader;
@@ -56,10 +56,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import mindustry.game.EventType;
 import org.aeonbits.owner.ConfigFactory;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 public final class DistributorCorePlugin extends AbstractMindustryPlugin implements Distributor {
 
@@ -74,6 +74,10 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
                     Make sure another plugin doesn't set it's own logging implementation or that it's logging implementation is relocated correctly.""",
                     LoggerFactory.getILoggerFactory().getClass().getName());
         }
+        // Redirect JUL to SLF4J
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+        // Restore the class loader
         Thread.currentThread().setContextClassLoader(temp);
     }
 
@@ -81,6 +85,7 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
     private final ArcCommandManager<CommandSender> serverCommands = ArcCommandManager.standardAsync(this);
     private final ArcCommandManager<CommandSender> clientCommands = ArcCommandManager.standardAsync(this);
     private final Map<String, ConnectionFactory> connections = new HashMap<>();
+    private final EventBus eventBus = new SimpleEventBus();
 
     private @MonotonicNonNull SQLPermissionService permissions = null;
     private @MonotonicNonNull SimplePluginScheduler scheduler = null;
@@ -91,8 +96,12 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
     @SuppressWarnings({"MissingCasesInEnumSwitch", "resource"})
     @Override
     public void onInit() {
+        // This may be dangerous, but I need to use the API here too
+        DistributorProvider.set(this);
+
         // Display the cool ass banner
-        final var banner = this.getClass().getClassLoader().getResourceAsStream("banner.txt");
+        final var banner =
+                this.getClass().getClassLoader().getResourceAsStream("fr/xpdustry/distributor/assets/banner.txt");
         if (banner == null) {
             throw new RuntimeException("The Distributor banner cannot be found, are you sure the plugin is valid ?");
         }
@@ -125,6 +134,12 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
             }
         }
 
+        // Start scheduler
+        final var parallelism = this.configuration.getSchedulerWorkers() < 1
+                ? Math.max(4, Runtime.getRuntime().availableProcessors())
+                : this.configuration.getSchedulerWorkers();
+        this.addListener(this.scheduler = new SimplePluginScheduler(TimeSource.arc(), Core.app::post, parallelism));
+
         // Create dependency manager
         this.dependencyManager = new DependencyManager(this.getDirectory().resolve("libs"));
         this.dependencyManager.addMavenCentral();
@@ -148,43 +163,27 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
 
         // Register bundles
         final var registry = LocalizationSourceRegistry.create(Locale.ENGLISH);
-        registry.registerAll(Locale.ENGLISH, "bundles/bundle", this.getClass().getClassLoader());
-        registry.registerAll(Locale.FRENCH, "bundles/bundle", this.getClass().getClassLoader());
+        registry.registerAll(
+                Locale.ENGLISH,
+                "fr/xpdustry/distributor/assets/bundles/bundle",
+                this.getClass().getClassLoader());
+        registry.registerAll(
+                Locale.FRENCH,
+                "fr/xpdustry/distributor/assets/bundles/bundle",
+                this.getClass().getClassLoader());
 
         this.source.addLocalizationSource(registry);
         this.source.addLocalizationSource(LocalizationSource.router());
 
         // Add listeners to validate players
         this.playerValidator = new SQLPlayerValidator(validatorConnectionFactory);
-        switch (this.configuration.getIdentityValidationPolicy()) {
-            case VALIDATE_UNKNOWN -> MoreEvents.subscribe(EventType.PlayerConnectionConfirmed.class, event -> {
-                if (!this.playerValidator.contains(event.player.uuid())) {
-                    this.playerValidator.validate(MUUID.of(event.player));
-                    return;
-                }
-                if (!this.playerValidator.isValid(MUUID.of(event.player))) {
-                    event.player.sendMessage(
-                            "[red]Warning, your identity couldn't be validated, please contact an administrator.");
-                }
-            });
-            case VALIDATE_ALL -> MoreEvents.subscribe(EventType.PlayerConnectionConfirmed.class, event -> {
-                this.playerValidator.validate(MUUID.of(event.player));
-            });
-        }
+        this.addListener(new PlayerValidatorListener(this.playerValidator, this.configuration));
 
         // Register permission utilities
         this.permissions = new SQLPermissionService(this.configuration, mainConnectionFactory, this.playerValidator);
         this.addListener(new PlayerPermissibleCommands(this, this.permissions.getPlayerPermissionManager()));
         this.addListener(new GroupPermissibleCommands(this, this.permissions.getGroupPermissionManager()));
         this.addListener(new PlayerValidatorCommands(this));
-
-        // Start scheduler
-        final var parallelism = this.configuration.getSchedulerWorkers() < 1
-                ? Math.max(4, Runtime.getRuntime().availableProcessors())
-                : this.configuration.getSchedulerWorkers();
-        this.addListener(this.scheduler = new SimplePluginScheduler(TimeSource.arc(), Core.app::post, parallelism));
-
-        DistributorProvider.set(this);
     }
 
     @Override
@@ -218,23 +217,20 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
     }
 
     @Override
+    public EventBus getEventBus() {
+        return this.eventBus;
+    }
+
+    @Override
     public void onExit() {
-        // Using application listener to not cause undefined behaviours in dependant plugins
-        Core.app.addListener(new ApplicationListener() {
-            @Override
-            public void dispose() {
-                for (final var connection : DistributorCorePlugin.this.connections.entrySet()) {
-                    try {
-                        DistributorCorePlugin.this.getLogger().debug("closing connection {}", connection.getKey());
-                        connection.getValue().close();
-                    } catch (final Exception e) {
-                        DistributorCorePlugin.this
-                                .getLogger()
-                                .error("An error occurred while closing connection {}", connection.getKey(), e);
-                    }
-                }
+        for (final var connection : this.connections.entrySet()) {
+            try {
+                this.getLogger().debug("Closing SQL connection '{}'", connection.getKey());
+                connection.getValue().close();
+            } catch (final Exception e) {
+                this.getLogger().error("An error occurred while closing SQL connection '{}'", connection.getKey(), e);
             }
-        });
+        }
     }
 
     public ArcCommandManager<CommandSender> getServerCommandManager() {
@@ -255,9 +251,9 @@ public final class DistributorCorePlugin extends AbstractMindustryPlugin impleme
 
     private void addConnection(final String name, final ConnectionFactory connection) {
         if (this.connections.put(name, connection) != null) {
-            throw new RuntimeException("Resource " + name + " already exists.");
+            throw new RuntimeException("Connection '" + name + "' already exists.");
         }
-        this.getLogger().debug("starting connection {}", name);
+        this.getLogger().debug("Starting SQL connection '{}'", name);
         connection.start();
     }
 }

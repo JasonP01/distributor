@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 package fr.xpdustry.distributor.api.scheduler;
 
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin;
+import java.util.List;
 
 /**
  * A {@code PluginScheduler} is used to schedule tasks for a plugin. A better alternative to {@link arc.util.Timer}.
@@ -47,6 +48,21 @@ public interface PluginScheduler {
      * @param plugin the plugin to schedule the task for.
      * @param value  the initial value.
      * @return a new {@link PluginTaskRecipe} instance.
+     * @deprecated The recipe API is awful given the better alternatives such as completable futures, coroutines,
+     *             or even the structured concurrency API of java 21.
      */
+    @Deprecated(forRemoval = true)
     <V> PluginTaskRecipe<V> recipe(final MindustryPlugin plugin, final V value);
+
+    /**
+     * Parses the given object to extract methods annotated with {@link TaskHandler} and schedules them to the arc
+     * event bus.
+     *
+     * @param plugin the plugin that owns the listener
+     * @param object the object to parse
+     * @return a list of scheduled tasks
+     * @deprecated replace with {@link fr.xpdustry.distributor.api.plugin.PluginAnnotationParser}
+     */
+    @Deprecated(forRemoval = true)
+    List<PluginTask<?>> parse(final MindustryPlugin plugin, final Object object);
 }

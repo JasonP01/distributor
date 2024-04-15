@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ public final class Permissibles {
     private Permissibles() {}
 
     public static void createDatabase(final ConnectionFactory factory) {
-        try (final var input = Permissibles.class.getResourceAsStream("/schemas/permission.sql")) {
+        try (final var input =
+                Permissibles.class.getResourceAsStream("/fr/xpdustry/distributor/assets/schemas/permission.sql")) {
             if (input == null) {
                 throw new IllegalStateException("Missing schema file.");
             }

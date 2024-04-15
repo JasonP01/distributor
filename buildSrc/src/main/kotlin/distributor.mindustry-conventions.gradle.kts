@@ -1,4 +1,3 @@
-import fr.xpdustry.toxopid.dsl.anukenJitpack
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 
 plugins {
@@ -16,7 +15,10 @@ toxopid {
 
 repositories {
     mavenCentral()
-    anukenJitpack()
+    maven("https://maven.xpdustry.com/mindustry") {
+        name = "xpdustry-mindustry"
+        mavenContent { releasesOnly() }
+    }
 }
 
 dependencies {

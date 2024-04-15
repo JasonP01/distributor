@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ import java.util.function.Function;
  *      final CommandHandler handler = ...;
  *      handler.<Player>register("rank", "Get your pvp rank.", (args, player) -> scheduler
  *          .recipe(plugin, player)
- *          .thenRun(() -> player.sendMessage("Getting your rank..."))
- *          .thenApplyAsync(player -> getRankFromDatabase(player))
+ *          .thenAccept(p -> p.sendMessage("Getting your rank..."))
+ *          .thenApplyAsync(p -> getRankFromDatabase(p))
  *          .thenAccept(rank -> player.sendMessage("Your rank is " + rank))
  *          .execute());
  * } </pre>

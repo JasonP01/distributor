@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,11 @@ public interface PluginListener {
      * @param handler the client command handler
      */
     default void onPluginClientCommandsRegistration(final CommandHandler handler) {}
+
+    /**
+     * Called after {@link MindustryPlugin#onLoad()}.
+     */
+    default void onPluginLoad() {}
 
     /**
      * Called after {@link MindustryPlugin#onUpdate()}.

@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.function.Function;
 
 // This code is provided to you by LuckPerms, under the MIT license.
+// TODO For future versions, rename this class to DatabaseContext or something like that.
 public interface ConnectionFactory extends AutoCloseable {
 
     Connection getConnection() throws SQLException;

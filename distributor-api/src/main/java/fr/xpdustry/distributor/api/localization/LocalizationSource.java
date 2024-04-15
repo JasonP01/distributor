@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public interface LocalizationSource {
 
     /**
-     * Returns a {@code LocalizationSource} for the router language :^).
+     * Returns a {@code LocalizationSource} for the router language {@code :^)}.
      */
     static LocalizationSource router() {
         return RouterLocalizationSource.INSTANCE;

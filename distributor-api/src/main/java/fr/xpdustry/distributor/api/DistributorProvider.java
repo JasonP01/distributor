@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ package fr.xpdustry.distributor.api;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * Provides a {@link Distributor} instance.
+ * A holder for the global {@link Distributor} instance.
  */
 public final class DistributorProvider {
 
@@ -29,17 +29,44 @@ public final class DistributorProvider {
 
     private DistributorProvider() {}
 
+    /**
+     * Returns the global {@link Distributor} instance.
+     * @throws DistributorInitializationException if the API hasn't been initialized yet
+     */
     public static Distributor get() {
         if (DistributorProvider.instance == null) {
-            throw new IllegalStateException("The API hasn't been initialized yet.");
+            throw new DistributorInitializationException("The API hasn't been initialized yet.");
         }
         return DistributorProvider.instance;
     }
 
+    /**
+     * Sets the global {@link Distributor} instance.
+     * @throws DistributorInitializationException if the API has already been initialized
+     */
     public static void set(final Distributor distributor) {
         if (DistributorProvider.instance != null) {
-            throw new IllegalStateException("The API has already been initialized.");
+            throw new DistributorInitializationException("The API has already been initialized.");
         }
         DistributorProvider.instance = distributor;
+    }
+
+    /**
+     * Clears the global {@link Distributor} instance.
+     * @throws DistributorInitializationException if the API hasn't been initialized yet
+     */
+    public static void clear() {
+        if (DistributorProvider.instance != null) {
+            DistributorProvider.instance = null;
+        } else {
+            throw new DistributorInitializationException("The API hasn't been initialized yet.");
+        }
+    }
+
+    /**
+     * Returns whether the API has been initialized.
+     */
+    public static boolean isInitialized() {
+        return DistributorProvider.instance != null;
     }
 }

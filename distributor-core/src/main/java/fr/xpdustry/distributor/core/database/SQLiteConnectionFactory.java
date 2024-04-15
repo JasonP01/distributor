@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 public final class SQLiteConnectionFactory implements ConnectionFactory {
 
     public static final Dependency SQLITE_DRIVER =
-            new Dependency("org.xerial", "sqlite-jdbc", "3.40.0.0", "46G5CXh7M7s34E8lLzfkq0ekieHB1FqAmgmCw3lEXBA=");
+            new Dependency("org.xerial", "sqlite-jdbc", "3.43.0.0", "UFJLFrZJ+wP4HfbmHexpkRuISeaUPGG4X6ok5Jv9mPw=");
 
     private final String prefix;
     private final Path path;

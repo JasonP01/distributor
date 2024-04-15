@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ package fr.xpdustry.distributor.core.scheduler;
 
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin;
 import fr.xpdustry.distributor.api.scheduler.Cancellable;
+import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit;
 import fr.xpdustry.distributor.api.scheduler.PluginTask;
 import fr.xpdustry.distributor.api.scheduler.PluginTaskBuilder;
 import java.util.concurrent.Callable;
@@ -75,13 +76,14 @@ public final class SimplePluginTask<V> extends FutureTask<V> implements Schedule
     }
 
     @Override
-    protected void setException(final Throwable t) {
-        super.setException(t);
+    protected void setException(final Throwable throwable) {
+        super.setException(throwable);
         this.plugin
                 .getLogger()
                 .error(
                         "An error occurred in thread {} of the plugin scheduler.",
-                        Thread.currentThread().getName());
+                        Thread.currentThread().getName(),
+                        throwable);
     }
 
     @Override
@@ -104,14 +106,14 @@ public final class SimplePluginTask<V> extends FutureTask<V> implements Schedule
         }
 
         @Override
-        public PluginTaskBuilder delay(final long delay) {
-            this.delay = delay;
+        public PluginTaskBuilder delay(final long delay, final MindustryTimeUnit unit) {
+            this.delay = MindustryTimeUnit.TICKS.convert(delay, unit);
             return this;
         }
 
         @Override
-        public PluginTaskBuilder repeat(final long interval) {
-            this.repeat = interval;
+        public PluginTaskBuilder repeat(final long interval, final MindustryTimeUnit unit) {
+            this.repeat = MindustryTimeUnit.TICKS.convert(interval, unit);
             return this;
         }
 

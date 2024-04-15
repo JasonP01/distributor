@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,32 +24,27 @@ import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.function.Consumer;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A wrapper {@link Set} for an {@link ObjectSet}.
  *
  * @param <E> the element type
  */
-public final class ArcSet<E> extends AbstractSet<E> implements Serializable {
+final class ArcSet<E> extends AbstractSet<E> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -3011659975952643135L;
 
     private final ObjectSet<E> set;
 
-    public ArcSet(final ObjectSet<E> set) {
+    ArcSet(final ObjectSet<E> set) {
         this.set = set;
     }
 
     @Override
-    public void forEach(final Consumer<? super E> action) {
-        this.set.forEach(action);
-    }
-
-    @Override
     public Iterator<E> iterator() {
-        return this.set.iterator();
+        return this.set.new ObjectSetIterator();
     }
 
     @Override
@@ -65,32 +60,31 @@ public final class ArcSet<E> extends AbstractSet<E> implements Serializable {
     @SuppressWarnings("unchecked")
     @Override
     public boolean contains(final Object o) {
+        checkNullElement(o);
         return this.set.contains((E) o);
     }
 
     @Override
-    public Object[] toArray() {
-        return this.set.toSeq().toArray();
-    }
-
-    @Override
-    public <T> T[] toArray(final T[] a) {
-        return this.set.toSeq().toArray(a.getClass().getComponentType());
-    }
-
-    @Override
     public boolean add(final E e) {
+        checkNullElement(e);
         return this.set.add(e);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean remove(final Object o) {
+        checkNullElement(o);
         return this.set.remove((E) o);
     }
 
     @Override
     public void clear() {
         this.set.clear();
+    }
+
+    private void checkNullElement(final @Nullable Object o) {
+        if (o == null) {
+            throw new NullPointerException("ArcSet does not support null elements");
+        }
     }
 }

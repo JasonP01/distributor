@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,11 +28,12 @@ import cloud.commandframework.exceptions.NoPermissionException;
 import cloud.commandframework.exceptions.NoSuchCommandException;
 import cloud.commandframework.exceptions.parsing.ParserException;
 import fr.xpdustry.distributor.api.command.sender.CommandSender;
+import java.util.Objects;
 import mindustry.gen.Player;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * This special command handler class delegates it's call to it's command manager.
+ * This special command class delegates its call to its command manager.
  */
 public final class ArcCommand<C> extends CommandHandler.Command {
 
@@ -41,7 +42,7 @@ public final class ArcCommand<C> extends CommandHandler.Command {
     private final boolean prefixed;
     private final String realName;
 
-    public ArcCommand(
+    ArcCommand(
             final String name,
             final String description,
             final ArcCommandManager<C> manager,
@@ -58,18 +59,30 @@ public final class ArcCommand<C> extends CommandHandler.Command {
         this.realName = name;
     }
 
+    /**
+     * Returns the real name of the command, without the prefix.
+     */
     public String getRealName() {
         return this.realName;
     }
 
+    /**
+     * Returns the command manager that created this command.
+     */
     public ArcCommandManager<C> getManager() {
         return this.manager;
     }
 
+    /**
+     * Returns whether this command is an alias.
+     */
     public boolean isAlias() {
         return this.alias;
     }
 
+    /**
+     * Returns whether this command is prefixed with the plugin name.
+     */
     public boolean isPrefixed() {
         return this.prefixed;
     }
@@ -90,6 +103,7 @@ public final class ArcCommand<C> extends CommandHandler.Command {
             final var sender = this.manager
                     .getCommandSenderMapper()
                     .apply(player != null ? CommandSender.player(player) : CommandSender.console());
+
             final var input = new StringBuilder(this.name);
             for (final var arg : args) {
                 input.append(' ').append(arg);
@@ -99,11 +113,12 @@ public final class ArcCommand<C> extends CommandHandler.Command {
                 if (throwable == null) {
                     return;
                 }
-                if (throwable instanceof ArgumentParseException t) {
-                    throwable = t.getCause();
+                if (throwable instanceof final ArgumentParseException t) {
+                    // NullAway doesn't understand that the cause is not null
+                    throwable = Objects.requireNonNull(t.getCause());
                 }
 
-                if (throwable instanceof InvalidSyntaxException t) {
+                if (throwable instanceof final InvalidSyntaxException t) {
                     this.manager.handleException(
                             sender,
                             InvalidSyntaxException.class,
@@ -112,7 +127,7 @@ public final class ArcCommand<C> extends CommandHandler.Command {
                                     sender,
                                     ArcCaptionKeys.COMMAND_INVALID_SYNTAX,
                                     CaptionVariable.of("syntax", e.getCorrectSyntax())));
-                } else if (throwable instanceof NoPermissionException t) {
+                } else if (throwable instanceof final NoPermissionException t) {
                     this.manager.handleException(
                             sender,
                             NoPermissionException.class,
@@ -121,7 +136,7 @@ public final class ArcCommand<C> extends CommandHandler.Command {
                                     sender,
                                     ArcCaptionKeys.COMMAND_INVALID_PERMISSION,
                                     CaptionVariable.of("permission", e.getMissingPermission())));
-                } else if (throwable instanceof NoSuchCommandException t) {
+                } else if (throwable instanceof final NoSuchCommandException t) {
                     this.manager.handleException(
                             sender,
                             NoSuchCommandException.class,
@@ -130,21 +145,19 @@ public final class ArcCommand<C> extends CommandHandler.Command {
                                     sender,
                                     ArcCaptionKeys.COMMAND_FAILURE_NO_SUCH_COMMAND,
                                     CaptionVariable.of("command", e.getSuppliedCommand())));
-                } else if (throwable instanceof ParserException t) {
+                } else if (throwable instanceof final ParserException t) {
                     this.manager.handleException(
                             sender,
                             ParserException.class,
                             t,
                             (s, e) -> this.sendException(sender, e.errorCaption(), e.captionVariables()));
-                } else if (throwable instanceof CommandExecutionException t) {
-                    this.manager.handleException(
-                            sender,
-                            CommandExecutionException.class,
-                            t,
-                            (s, e) -> this.sendException(
-                                    sender,
-                                    ArcCaptionKeys.COMMAND_FAILURE_EXECUTION,
-                                    CaptionVariable.of("message", this.getErrorMessage(e))));
+                } else if (throwable instanceof final CommandExecutionException t) {
+                    this.manager.handleException(sender, CommandExecutionException.class, t, (s, e) -> {
+                        @SuppressWarnings("NullAway")
+                        // TODO Open a pull request to annotate CommandExecutionException#getCause NonNull
+                        final var variable = CaptionVariable.of("message", this.getErrorMessage(e.getCause()));
+                        this.sendException(sender, ArcCaptionKeys.COMMAND_FAILURE_EXECUTION, variable);
+                    });
                     this.manager
                             .getPlugin()
                             .getLogger()

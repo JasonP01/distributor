@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@ package fr.xpdustry.distributor.core.commands.parser;
 
 import fr.xpdustry.distributor.api.security.permission.PermissibleManager;
 import fr.xpdustry.distributor.api.security.permission.PlayerPermissible;
-import fr.xpdustry.distributor.api.util.PlayerLookup;
+import fr.xpdustry.distributor.api.util.MUUID;
+import fr.xpdustry.distributor.api.util.Players;
 import java.util.Optional;
 
 public final class PlayerPermissibleParser<C> extends PermissibleParser<C, PlayerPermissible> {
@@ -31,12 +32,13 @@ public final class PlayerPermissibleParser<C> extends PermissibleParser<C, Playe
         this.manager = manager;
     }
 
+    // TODO Should cases with players having the same plain name be handled?
     @Override
     protected Optional<PlayerPermissible> findPermissible(final String name) {
-        if (PlayerLookup.isUuid(name)) {
+        if (MUUID.isUuid(name)) {
             return Optional.of(this.manager.findOrCreateById(name));
         }
-        final var players = PlayerLookup.findPlayers(name);
+        final var players = Players.findPlayers(name);
         if (players.size() == 1) {
             return Optional.of(this.manager.findOrCreateById(players.get(0).uuid()));
         } else {

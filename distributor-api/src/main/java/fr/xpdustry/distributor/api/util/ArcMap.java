@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
@@ -36,7 +35,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @param <K> the type of the keys
  * @param <V> the type of the values
  */
-public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializable {
+final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1261308433311045675L;
@@ -44,7 +43,7 @@ public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializabl
     private final ObjectMap<K, V> map;
     private transient @Nullable EntrySet entries = null;
 
-    public ArcMap(final ObjectMap<K, V> map) {
+    ArcMap(final ObjectMap<K, V> map) {
         this.map = map;
     }
 
@@ -66,23 +65,27 @@ public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializabl
     @SuppressWarnings("unchecked")
     @Override
     public boolean containsKey(final Object key) {
+        checkNullKey(key);
         return this.map.containsKey((K) key);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public V get(final Object key) {
+        checkNullKey(key);
         return this.map.get((K) key);
     }
 
     @Override
     public V put(final K key, final V value) {
+        checkNullKey(key);
         return this.map.put(key, value);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public V remove(final Object key) {
+        checkNullKey(key);
         return this.map.remove((K) key);
     }
 
@@ -99,12 +102,8 @@ public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializabl
     @SuppressWarnings("unchecked")
     @Override
     public V getOrDefault(final Object key, final V defaultValue) {
+        checkNullKey(key);
         return this.map.get((K) key, defaultValue);
-    }
-
-    @Override
-    public void forEach(final BiConsumer<? super K, ? super V> action) {
-        this.map.each(action::accept);
     }
 
     @Override
@@ -113,6 +112,12 @@ public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializabl
             this.entries = new EntrySet();
         }
         return this.entries;
+    }
+
+    private void checkNullKey(final @Nullable Object o) {
+        if (o == null) {
+            throw new NullPointerException("ArcMap does not support null keys");
+        }
     }
 
     private final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
@@ -193,7 +198,7 @@ public final class ArcMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
         @Override
         public boolean equals(final Object o) {
-            return o instanceof Map.Entry<?, ?> entry
+            return o instanceof final Map.Entry<?, ?> entry
                     && Objects.equals(this.key, entry.getKey())
                     && Objects.equals(this.getValue(), entry.getValue());
         }

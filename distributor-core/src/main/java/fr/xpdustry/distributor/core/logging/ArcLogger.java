@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@ package fr.xpdustry.distributor.core.logging;
 
 import arc.util.ColorCodes;
 import arc.util.Log;
-import fr.xpdustry.distributor.api.plugin.PluginDescriptor;
+import arc.util.Log.LogLevel;
 import java.io.Serial;
 import java.util.Arrays;
-import mindustry.mod.Plugin;
+import mindustry.net.Administration;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
@@ -35,29 +35,25 @@ public final class ArcLogger extends AbstractLogger {
     @Serial
     private static final long serialVersionUID = 3476499937056865545L;
 
-    @SuppressWarnings("unchecked")
-    public ArcLogger(final String name) {
-        try {
-            final var caller = Class.forName(name);
-            if (Plugin.class.isAssignableFrom(caller)) {
-                this.name =
-                        PluginDescriptor.from((Class<? extends Plugin>) caller).getDisplayName();
-            } else {
-                this.name = caller.getName();
-            }
-        } catch (final ClassNotFoundException ignored) {
-            this.name = name;
-        }
+    private static final Object WRITE_LOCK = new Object();
+    private static final Administration.Config TRACE =
+            new Administration.Config("trace", "Enable trace logging when debug is enabled.", false);
+
+    private final @Nullable String plugin;
+
+    public ArcLogger(final String name, final @Nullable String plugin) {
+        this.name = name;
+        this.plugin = plugin;
     }
 
     @Override
     public boolean isTraceEnabled() {
-        return this.isArcLogLevelAtLeast(Log.LogLevel.debug);
+        return this.isArcLogLevelAtLeast(Log.LogLevel.debug) && TRACE.bool();
     }
 
     @Override
     public boolean isTraceEnabled(final Marker marker) {
-        return this.isArcLogLevelAtLeast(Log.LogLevel.debug);
+        return this.isArcLogLevelAtLeast(Log.LogLevel.debug) && TRACE.bool();
     }
 
     @Override
@@ -115,20 +111,30 @@ public final class ArcLogger extends AbstractLogger {
         final var builder = new StringBuilder();
 
         if (!this.name.equals(ROOT_LOGGER_NAME)) {
-            builder.append(ColorCodes.white)
+            if (this.plugin != null) {
+                builder.append(this.getColorCode(level))
+                        .append('[')
+                        .append(this.plugin)
+                        .append(']')
+                        .append(ColorCodes.reset)
+                        .append(' ');
+            }
+            builder.append(this.getColorCode(level))
                     .append('[')
-                    .append(ColorCodes.reset)
                     .append(this.name)
-                    .append(ColorCodes.white)
                     .append(']')
                     .append(ColorCodes.reset)
                     .append(' ');
         }
 
+        if (level == Level.ERROR) {
+            builder.append(this.getColorCode(level));
+        }
+
         if (throwable == null
                 && arguments != null
                 && arguments.length != 0
-                && arguments[arguments.length - 1] instanceof Throwable last) {
+                && arguments[arguments.length - 1] instanceof final Throwable last) {
             throwable = last;
             arguments = arguments.length == 1 ? null : Arrays.copyOf(arguments, arguments.length - 1);
         }
@@ -137,18 +143,21 @@ public final class ArcLogger extends AbstractLogger {
                         MessageFormatter.basicArrayFormat(messagePattern.replace("{}", "&fb&lb{}&fr"), arguments))
                 .toString();
 
-        if (throwable != null && (arguments == null || arguments.length == 0)) {
-            Log.err(string, throwable);
-        } else {
-            Log.log(this.getArcLogLevel(level), string);
-            if (throwable != null) {
+        synchronized (WRITE_LOCK) {
+            if (throwable != null && (arguments == null || arguments.length == 0)) {
+                Log.err(string);
                 Log.err(throwable);
+            } else {
+                Log.log(this.getArcLogLevel(level), string);
+                if (throwable != null) {
+                    Log.err(throwable);
+                }
             }
         }
     }
 
     private boolean isArcLogLevelAtLeast(final Log.LogLevel level) {
-        return Log.level.ordinal() <= level.ordinal();
+        return level != LogLevel.none && Log.level.ordinal() <= level.ordinal();
     }
 
     private Log.LogLevel getArcLogLevel(final Level level) {
@@ -157,6 +166,15 @@ public final class ArcLogger extends AbstractLogger {
             case INFO -> Log.LogLevel.info;
             case WARN -> Log.LogLevel.warn;
             case ERROR -> Log.LogLevel.err;
+        };
+    }
+
+    private String getColorCode(final Level level) {
+        return switch (level) {
+            case DEBUG, TRACE -> ColorCodes.lightCyan + ColorCodes.bold;
+            case INFO -> ColorCodes.lightBlue + ColorCodes.bold;
+            case WARN -> ColorCodes.lightYellow + ColorCodes.bold;
+            case ERROR -> ColorCodes.lightRed + ColorCodes.bold;
         };
     }
 }

@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ import fr.xpdustry.distributor.core.database.SQLiteConnectionFactory;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -49,7 +48,7 @@ public final class SQLPermissionServiceTest {
 
     private SQLiteConnectionFactory factory;
     private @TempDir Path dbDir;
-    private SQLPermissionService manager;
+    private SQLPermissionService service;
 
     @BeforeEach
     void setup() {
@@ -64,7 +63,7 @@ public final class SQLPermissionServiceTest {
                 "test_", this.dbDir.resolve("test.db"), this.getClass().getClassLoader());
         this.factory.start();
 
-        this.manager = new SQLPermissionService(config, this.factory, validator);
+        this.service = new SQLPermissionService(config, this.factory, validator);
     }
 
     @AfterEach
@@ -73,20 +72,22 @@ public final class SQLPermissionServiceTest {
     }
 
     @Test
-    void test_permission_calculation_player() {
+    void test_player_permission_calculation_player() {
         this.createPlayer(player -> player.setPermission(PERMISSION1, Tristate.TRUE));
-        assertThat(this.manager.getPermission(PLAYER, PERMISSION1).asBoolean()).isTrue();
+        assertThat(this.service.getPlayerPermission(PLAYER, PERMISSION1).asBoolean())
+                .isTrue();
     }
 
     @Test
-    void test_permission_calculation_group() {
+    void test_player_permission_calculation_group() {
         this.createPlayer(player -> player.addParentGroup(GROUP1));
         this.createGroup(GROUP1, group -> group.setPermission(PERMISSION1, Tristate.FALSE));
-        assertThat(this.manager.getPermission(PLAYER, PERMISSION1).asBoolean()).isFalse();
+        assertThat(this.service.getPlayerPermission(PLAYER, PERMISSION1).asBoolean())
+                .isFalse();
     }
 
     @Test
-    void test_permission_calculation_group_with_weight() {
+    void test_player_permission_calculation_group_with_weight() {
         this.createPlayer(player -> {
             player.addParentGroup(GROUP1);
             player.addParentGroup(GROUP2);
@@ -102,24 +103,41 @@ public final class SQLPermissionServiceTest {
             group.setWeight(20);
         });
 
-        assertThat(this.manager.getPermission(PLAYER, PERMISSION1).asBoolean()).isTrue();
+        assertThat(this.service.getPlayerPermission(PLAYER, PERMISSION1).asBoolean())
+                .isTrue();
     }
 
     @Test
-    void test_default_group() {
+    void test_player_default_group() {
         this.createGroup(DEFAULT_GROUP, group -> group.setPermission(PERMISSION2, Tristate.TRUE));
-        Assertions.assertTrue(this.manager.getPermission(PLAYER, PERMISSION2).asBoolean());
+        assertThat(this.service.getPlayerPermission(PLAYER, PERMISSION2).asBoolean())
+                .isTrue();
+    }
+
+    @Test
+    void test_group_permission_calculation() {
+        this.createGroup(GROUP1, group -> group.setPermission(PERMISSION1, Tristate.TRUE));
+        assertThat(this.service.getGroupPermission(GROUP1, PERMISSION1).asBoolean())
+                .isTrue();
+    }
+
+    @Test
+    void test_group_permission_calculation_parent() {
+        this.createGroup(GROUP1, group -> group.addParentGroup(GROUP2));
+        this.createGroup(GROUP2, group -> group.setPermission(PERMISSION1, Tristate.TRUE));
+        assertThat(this.service.getGroupPermission(GROUP1, PERMISSION1).asBoolean())
+                .isTrue();
     }
 
     private void createPlayer(final Consumer<PlayerPermissible> setup) {
-        final var players = this.manager.getPlayerPermissionManager();
+        final var players = this.service.getPlayerPermissionManager();
         final var player = players.findOrCreateById(SQLPermissionServiceTest.PLAYER.getUuid());
         setup.accept(player);
         players.save(player);
     }
 
     private void createGroup(final String name, final Consumer<GroupPermissible> setup) {
-        final var groups = this.manager.getGroupPermissionManager();
+        final var groups = this.service.getGroupPermissionManager();
         final var group = groups.findOrCreateById(name);
         setup.accept(group);
         groups.save(group);

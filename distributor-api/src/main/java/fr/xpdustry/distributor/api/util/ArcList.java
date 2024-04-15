@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,10 @@ import arc.struct.Seq;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.RandomAccess;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
@@ -35,36 +33,20 @@ import java.util.function.UnaryOperator;
  *
  * @param <E> the element type
  */
-public final class ArcList<E> extends AbstractList<E> implements Serializable, RandomAccess {
+final class ArcList<E> extends AbstractList<E> implements Serializable, RandomAccess {
 
     @Serial
     private static final long serialVersionUID = 7102237478555006892L;
 
     private final Seq<E> seq;
 
-    public ArcList(final Seq<E> seq) {
+    ArcList(final Seq<E> seq) {
         this.seq = seq;
     }
 
     @Override
     public void replaceAll(final UnaryOperator<E> operator) {
         this.seq.replace(operator::apply);
-    }
-
-    @Override
-    public void sort(final Comparator<? super E> c) {
-        this.seq.sort(c);
-    }
-
-    @Override
-    public boolean removeIf(final Predicate<? super E> filter) {
-        final var size = this.seq.size;
-        return size != this.seq.removeAll(filter::test).size;
-    }
-
-    @Override
-    public void forEach(final Consumer<? super E> action) {
-        this.seq.forEach(action);
     }
 
     @Override
@@ -83,13 +65,14 @@ public final class ArcList<E> extends AbstractList<E> implements Serializable, R
         return this.seq.contains((E) o);
     }
 
-    @Override
-    public Object[] toArray() {
-        return this.seq.toArray();
-    }
-
+    @SuppressWarnings("SuspiciousSystemArraycopy")
     @Override
     public <T> T[] toArray(final T[] a) {
+        if (a.length >= size()) {
+            System.arraycopy(this.seq.items, 0, a, 0, this.seq.size);
+            Arrays.fill(a, this.seq.size, a.length, null);
+            return a;
+        }
         return this.seq.toArray(a.getClass().getComponentType());
     }
 
@@ -107,7 +90,7 @@ public final class ArcList<E> extends AbstractList<E> implements Serializable, R
     @Override
     public boolean addAll(final Collection<? extends E> c) {
         this.seq.addAll(c);
-        return true;
+        return !c.isEmpty();
     }
 
     @Override

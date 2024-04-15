@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import cloud.commandframework.CommandManager.ManagerSettings;
 import cloud.commandframework.arguments.StaticArgument;
 import cloud.commandframework.internal.CommandRegistrationHandler;
 import cloud.commandframework.meta.CommandMeta;
-import fr.xpdustry.distributor.api.util.ArcList;
+import fr.xpdustry.distributor.api.util.ArcCollections;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
@@ -97,8 +97,8 @@ final class ArcRegistrationHandler<C> implements CommandRegistrationHandler {
     @Override
     public void unregisterRootCommand(final StaticArgument<?> root) {
         this.registered.remove(root);
-        for (final var command : new ArcList<>(this.handler.getCommandList())) {
-            if (command instanceof ArcCommand<?> cloud
+        for (final var command : ArcCollections.immutableList(this.handler.getCommandList())) {
+            if (command instanceof final ArcCommand<?> cloud
                     && cloud.getManager() == this.manager
                     && root.getAliases().contains(cloud.getRealName())) {
                 this.handler.removeCommand(command.text);

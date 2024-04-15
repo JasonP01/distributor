@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,11 +28,9 @@ import org.slf4j.spi.SLF4JServiceProvider;
 
 public final class ArcServiceProvider implements SLF4JServiceProvider {
 
-    @MonotonicNonNull private ILoggerFactory loggerFactory = null;
-
-    @MonotonicNonNull private IMarkerFactory markerFactory = null;
-
-    @MonotonicNonNull private MDCAdapter mdcAdapter = null;
+    private @MonotonicNonNull ILoggerFactory loggerFactory = null;
+    private @MonotonicNonNull IMarkerFactory markerFactory = null;
+    private @MonotonicNonNull MDCAdapter mdcAdapter = null;
 
     @Override
     public ILoggerFactory getLoggerFactory() {

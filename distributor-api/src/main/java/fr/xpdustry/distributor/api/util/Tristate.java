@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@ package fr.xpdustry.distributor.api.util;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * A ternary boolean type, used by the permission system.
+ */
 public enum Tristate {
     FALSE(false),
     TRUE(true),

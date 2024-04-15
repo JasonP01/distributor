@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
  */
 package fr.xpdustry.distributor.api.util;
 
+import java.util.Base64;
 import java.util.Objects;
 import mindustry.gen.Player;
 import mindustry.net.Administration;
@@ -32,6 +33,8 @@ public final class MUUID {
     private final String usid;
 
     private MUUID(final String uuid, final String usid) {
+        checkUuid(uuid);
+        checkUsid(usid);
         this.uuid = uuid;
         this.usid = usid;
     }
@@ -68,6 +71,54 @@ public final class MUUID {
     }
 
     /**
+     * Returns whether the given string is a valid UUID.
+     *
+     * @param uuid the UUID to check
+     * @return true if the given string is a valid UUID, false otherwise
+     */
+    public static boolean isUuid(final String uuid) {
+        try {
+            final var bytes = Base64.getDecoder().decode(uuid);
+            return bytes.length == 16;
+        } catch (final IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Throws an {@link IllegalArgumentException} if the given string is not a valid UUID.
+     */
+    public static void checkUuid(final String uuid) {
+        if (!isUuid(uuid)) {
+            throw new IllegalArgumentException(String.format("Invalid UUID: %s", uuid));
+        }
+    }
+
+    /**
+     * Returns whether the given string is a valid USID.
+     *
+     * @param usid the USID to check
+     * @return true if the given string is a valid USID, false otherwise
+     */
+    public static boolean isUsid(final String usid) {
+        try {
+            final var bytes = Base64.getDecoder().decode(usid);
+            return bytes.length == 8;
+        } catch (final IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Throws an {@link IllegalArgumentException} if the given string is not a valid USID.
+     */
+    public static void checkUsid(final String usid) {
+        if (!isUsid(usid)) {
+            throw new IllegalArgumentException(String.format("Invalid USID: %s", usid));
+        }
+    }
+
+    /**
      * Returns the UUID.
      */
     public String getUuid() {
@@ -75,10 +126,24 @@ public final class MUUID {
     }
 
     /**
+     * Returns the UUID as decoded bytes.
+     */
+    public byte[] getDecodedUuid() {
+        return Base64.getDecoder().decode(this.uuid);
+    }
+
+    /**
      * Returns the USID.
      */
     public String getUsid() {
         return this.usid;
+    }
+
+    /**
+     * Returns the USID as decoded bytes.
+     */
+    public byte[] getDecodedUsid() {
+        return Base64.getDecoder().decode(this.usid);
     }
 
     @Override
@@ -89,6 +154,11 @@ public final class MUUID {
     @Override
     public boolean equals(final @Nullable Object obj) {
         return obj == this
-                || (obj instanceof MUUID muuid && this.uuid.equals(muuid.uuid) && this.usid.equals(muuid.usid));
+                || (obj instanceof final MUUID muuid && this.uuid.equals(muuid.uuid) && this.usid.equals(muuid.usid));
+    }
+
+    @Override
+    public String toString() {
+        return "MUUID{" + "uuid='" + this.uuid + '\'' + ", usid='" + this.usid + '\'' + '}';
     }
 }

@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ public final class PermissionTree {
             }
             node.value = state;
             var index = parts.length - 1;
-            while (node.parent != null && node.children.size() == 0) {
+            while (node.parent != null && node.children.isEmpty()) {
                 node = node.parent;
                 node.children.remove(parts[index--]);
             }
@@ -105,7 +105,7 @@ public final class PermissionTree {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PermissionTree that)) {
+        if (!(o instanceof final PermissionTree that)) {
             return false;
         }
         if (!this.children.equals(that.children)) {

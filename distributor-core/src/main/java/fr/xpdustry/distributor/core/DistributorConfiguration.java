@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,6 +62,10 @@ public interface DistributorConfiguration extends Accessible {
     @Config.Key("distributor.security.validation.policy")
     @Config.DefaultValue("VALIDATE_UNKNOWN")
     PlayerValidationPolicy getIdentityValidationPolicy();
+
+    @Config.Key("distributor.security.validation.auto-admin")
+    @Config.DefaultValue("false")
+    boolean isValidationAutoAdminEnabled();
 
     @Config.Key("distributor.security.permission.primary-group")
     @Config.DefaultValue("default")

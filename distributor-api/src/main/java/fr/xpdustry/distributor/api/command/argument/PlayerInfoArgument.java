@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ import cloud.commandframework.context.CommandContext;
 import cloud.commandframework.exceptions.parsing.NoInputProvidedException;
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument.PlayerNotFoundException;
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument.TooManyPlayersFoundException;
-import fr.xpdustry.distributor.api.util.PlayerLookup;
+import fr.xpdustry.distributor.api.util.MUUID;
+import fr.xpdustry.distributor.api.util.Players;
 import java.util.List;
 import java.util.Queue;
 import java.util.function.BiFunction;
@@ -66,7 +67,7 @@ public final class PlayerInfoArgument<C> extends CommandArgument<C, PlayerInfo> 
      * @param <C>  the command sender type
      * @return the created builder
      */
-    public static <C> Builder<C> newBuilder(final String name) {
+    public static <C> Builder<C> builder(final String name) {
         return new Builder<>(name);
     }
 
@@ -78,7 +79,7 @@ public final class PlayerInfoArgument<C> extends CommandArgument<C, PlayerInfo> 
      * @return the created argument
      */
     public static <C> PlayerInfoArgument<C> of(final String name) {
-        return PlayerInfoArgument.<C>newBuilder(name).asRequired().build();
+        return PlayerInfoArgument.<C>builder(name).asRequired().build();
     }
 
     /**
@@ -89,7 +90,7 @@ public final class PlayerInfoArgument<C> extends CommandArgument<C, PlayerInfo> 
      * @return the created argument
      */
     public static <C> PlayerInfoArgument<C> optional(final String name) {
-        return PlayerInfoArgument.<C>newBuilder(name).asOptional().build();
+        return PlayerInfoArgument.<C>builder(name).asOptional().build();
     }
 
     /**
@@ -134,11 +135,12 @@ public final class PlayerInfoArgument<C> extends CommandArgument<C, PlayerInfo> 
                 return ArgumentParseResult.failure(new NoInputProvidedException(PlayerInfoParser.class, ctx));
             }
 
-            if (PlayerLookup.isUuid(input)) {
+            if (MUUID.isUuid(input)) {
+                inputQueue.remove();
                 return ArgumentParseResult.success(Vars.netServer.admins.getInfo(input));
             }
 
-            final var players = PlayerLookup.findPlayers(input);
+            final var players = Players.findPlayers(input);
 
             if (players.isEmpty()) {
                 return ArgumentParseResult.failure(new PlayerNotFoundException(input, ctx));
@@ -152,7 +154,7 @@ public final class PlayerInfoArgument<C> extends CommandArgument<C, PlayerInfo> 
 
         @Override
         public List<String> suggestions(final CommandContext<C> commandContext, final String input) {
-            return PlayerLookup.findPlayers(input, true).stream()
+            return Players.findPlayers(input, true).stream()
                     .map(Player::plainName)
                     .toList();
         }

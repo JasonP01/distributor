@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,12 @@ public final class TestPlayer extends Player {
 
     public TestPlayer(final String name, final String uuid) {
         this.name(name);
+        this.uuid = uuid;
+    }
+
+    public TestPlayer(final String name, final String uuid, final int id) {
+        this.name(name);
+        this.id(id);
         this.uuid = uuid;
     }
 

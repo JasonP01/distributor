@@ -1,7 +1,7 @@
 /*
  * Distributor, a feature-rich framework for Mindustry plugins.
  *
- * Copyright (C) 2022 Xpdustry
+ * Copyright (C) 2023 Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import cloud.commandframework.context.CommandContext;
 import cloud.commandframework.exceptions.parsing.NoInputProvidedException;
 import cloud.commandframework.exceptions.parsing.ParserException;
 import fr.xpdustry.distributor.api.command.ArcCaptionKeys;
-import fr.xpdustry.distributor.api.util.PlayerLookup;
+import fr.xpdustry.distributor.api.util.Players;
 import java.io.Serial;
 import java.util.List;
 import java.util.Queue;
@@ -66,7 +66,7 @@ public final class PlayerArgument<C> extends CommandArgument<C, Player> {
      * @param <C>  the command sender type
      * @return the created builder
      */
-    public static <C> Builder<C> newBuilder(final String name) {
+    public static <C> Builder<C> builder(final String name) {
         return new Builder<>(name);
     }
 
@@ -78,7 +78,7 @@ public final class PlayerArgument<C> extends CommandArgument<C, Player> {
      * @return the created builder
      */
     public static <C> PlayerArgument<C> of(final String name) {
-        return PlayerArgument.<C>newBuilder(name).asRequired().build();
+        return PlayerArgument.<C>builder(name).asRequired().build();
     }
 
     /**
@@ -89,7 +89,7 @@ public final class PlayerArgument<C> extends CommandArgument<C, Player> {
      * @return the created builder
      */
     public static <C> PlayerArgument<C> optional(final String name) {
-        return PlayerArgument.<C>newBuilder(name).asOptional().build();
+        return PlayerArgument.<C>builder(name).asOptional().build();
     }
 
     /**
@@ -133,7 +133,7 @@ public final class PlayerArgument<C> extends CommandArgument<C, Player> {
                 return ArgumentParseResult.failure(new NoInputProvidedException(PlayerParser.class, ctx));
             }
 
-            final var players = PlayerLookup.findPlayers(input, true);
+            final var players = Players.findPlayers(input, true);
 
             if (players.isEmpty()) {
                 return ArgumentParseResult.failure(new PlayerNotFoundException(input, ctx));
@@ -147,7 +147,7 @@ public final class PlayerArgument<C> extends CommandArgument<C, Player> {
 
         @Override
         public List<String> suggestions(final CommandContext<C> commandContext, final String input) {
-            return PlayerLookup.findPlayers(input, true).stream()
+            return Players.findPlayers(input, true).stream()
                     .map(Player::plainName)
                     .toList();
         }
